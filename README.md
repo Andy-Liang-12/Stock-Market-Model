@@ -2,6 +2,6 @@
 
 ## Will make a README later
 
-## [Progress Tracker](https://www.notion.so/23a7fcd52361800480bdd13321b68a78?v=23a7fcd52361813abc23000cdf76a346&source=copy_link)
+## [Progress Tracker](https://www.notion.so/23a7fcd5236180bcb79bce1115ad5747?v=23a7fcd5236181348438000c082b4c99)
 
 
