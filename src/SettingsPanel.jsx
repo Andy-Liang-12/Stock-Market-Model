@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Settings, X, RefreshCw, DollarSign, Zap, TrendingUp, AlertTriangle } from 'lucide-react';
 
+// TODO: Settings should only update when the user clicks "Apply Settings"
+// Currently, it updates immediately on input change, which can be disruptive
+// Consider adding a "Save" button to apply changes at once
 const SettingsPanel = ({ 
-  gameSettings, 
-  onSettingsChange, 
-  onResetGame 
+  gameSettings,
+  onSettingsChange,
+  onResetGame,
+  onAddFunds
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
@@ -44,7 +48,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.game.startingCash}
-            onChange={(e) => handleSettingChange('game', 'startingCash', parseInt(e.target.value) || 100000)}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              handleSettingChange('game', 'startingCash', isNaN(value) ? 100000 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="0"
             max="1000000"
@@ -52,18 +59,27 @@ const SettingsPanel = ({
           />
         </div>
 
-        {/* Available Funds */}
+        {/* Add Funds */}
         <div>
-          <label className="block text-sm text-gray-300 mb-2">Available Funds ($)</label>
-          <input
-            type="number"
-            value={gameSettings.game.availableFunds}
-            onChange={(e) => handleSettingChange('game', 'availableFunds', parseInt(e.target.value) || 100000)}
-            className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-            min="0"
-            max="1000000"
-            step="1000"
-          />
+          <label className="block text-sm text-gray-300 mb-2">Add Funds ($)</label>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              const value = parseFloat(e.target.elements.addFunds.value);
+              if (!isNaN(value) && value !== 0) {
+                if (typeof onAddFunds === 'function') onAddFunds(value);
+              }
+            }}
+          >
+            <input
+              type="number"
+              name="addFunds"
+              className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              step="100"
+              placeholder="Enter amount (+/-)"
+            />
+            <button type="submit" className="mt-2 w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold">Apply</button>
+          </form>
         </div>
 
         {/* Tick Speed */}
@@ -72,11 +88,14 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.game.tickInterval}
-            onChange={(e) => handleSettingChange('game', 'tickInterval', parseInt(e.target.value) || 500)}
+            onChange={e => {
+              const value = parseInt(e.target.value);
+              handleSettingChange('game', 'tickInterval', isNaN(value) ? 500 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="100"
             max="5000"
-            step="100"
+            step="10"
           />
         </div>
       </div>
@@ -103,7 +122,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.game.tradingFeePercent}
-            onChange={(e) => handleSettingChange('game', 'tradingFeePercent', parseFloat(e.target.value) || 0.1)}
+            onChange={e => {
+              const value = parseFloat(e.target.value);
+              handleSettingChange('game', 'tradingFeePercent', isNaN(value) ? 0.1 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="0"
             max="5"
@@ -156,7 +178,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.market.volatilityMultiplier}
-            onChange={(e) => handleSettingChange('market', 'volatilityMultiplier', parseFloat(e.target.value) || 1.0)}
+            onChange={e => {
+              const value = parseFloat(e.target.value);
+              handleSettingChange('market', 'volatilityMultiplier', isNaN(value) ? 1.0 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="0.1"
             max="5.0"
@@ -172,7 +197,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.market.initialSentiment}
-            onChange={(e) => handleSettingChange('market', 'initialSentiment', parseFloat(e.target.value) || 0)}
+            onChange={e => {
+              const value = parseFloat(e.target.value);
+              handleSettingChange('market', 'initialSentiment', isNaN(value) ? 0 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="-1"
             max="1"
@@ -186,7 +214,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.market.regimeChangeProbability * 100}
-            onChange={(e) => handleSettingChange('market', 'regimeChangeProbability', (parseFloat(e.target.value) || 5) / 100)}
+            onChange={e => {
+              const value = parseFloat(e.target.value);
+              handleSettingChange('market', 'regimeChangeProbability', isNaN(value) ? 0.05 : value / 100);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="0"
             max="50"
@@ -238,8 +269,11 @@ const SettingsPanel = ({
               <label className="block text-sm text-gray-300 mb-2">Event Probability (%)</label>
               <input
                 type="number"
-                value={gameSettings.events.probability * 100}
-                onChange={(e) => handleSettingChange('events', 'probability', (parseFloat(e.target.value) || 8) / 100)}
+                value={gameSettings.events.eventProbability * 100}
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  handleSettingChange('events', 'eventProbability', isNaN(value) ? 0.08 : value / 100);
+                }}
                 className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                 min="0"
                 max="100"
@@ -252,7 +286,10 @@ const SettingsPanel = ({
               <input
                 type="number"
                 value={gameSettings.events.impactMultiplier}
-                onChange={(e) => handleSettingChange('events', 'impactMultiplier', parseFloat(e.target.value) || 1.0)}
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  handleSettingChange('events', 'impactMultiplier', isNaN(value) ? 1.0 : value);
+                }}
                 className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                 min="0.1"
                 max="5.0"
@@ -281,7 +318,10 @@ const SettingsPanel = ({
               <input
                 type="number"
                 value={gameSettings.events.autoContinueDelay}
-                onChange={(e) => handleSettingChange('events', 'autoContinueDelay', parseInt(e.target.value) || 5)}
+                onChange={e => {
+                  const value = parseInt(e.target.value);
+                  handleSettingChange('events', 'autoContinueDelay', isNaN(value) ? 5 : value);
+                }}
                 className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                 min="1"
                 max="60"
@@ -334,7 +374,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.advanced.maxHistoryPoints}
-            onChange={(e) => handleSettingChange('advanced', 'maxHistoryPoints', parseInt(e.target.value) || 0)}
+            onChange={e => {
+              const value = parseInt(e.target.value);
+              handleSettingChange('advanced', 'maxHistoryPoints', isNaN(value) ? 0 : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             min="0"
             max="10000"
@@ -348,7 +391,10 @@ const SettingsPanel = ({
           <input
             type="number"
             value={gameSettings.advanced.randomSeed || ''}
-            onChange={(e) => handleSettingChange('advanced', 'randomSeed', parseInt(e.target.value) || null)}
+            onChange={e => {
+              const value = parseInt(e.target.value);
+              handleSettingChange('advanced', 'randomSeed', isNaN(value) ? null : value);
+            }}
             className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             placeholder="Random"
           />
@@ -458,6 +504,7 @@ const SettingsPanel = ({
 export const defaultGameSettings = {
   game: {
     startingCash: 100000,
+    availableFunds: 100000,
     tickInterval: 500,
     tradingFeesEnabled: false,
     tradingFeePercent: 0.0,
@@ -472,7 +519,7 @@ export const defaultGameSettings = {
   },
   events: {
     enabled: true,
-    probability: 0.08,
+    eventProbability: 0.08,
     impactMultiplier: 1.0,
     autoContinue: false,
     autoContinueDelay: 5

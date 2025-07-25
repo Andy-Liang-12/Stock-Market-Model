@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
 import { TrendingUp, TrendingDown, Pause, Play, DollarSign, Activity, Globe } from 'lucide-react';
 import SettingsPanel, { defaultGameSettings } from './SettingsPanel';
 
@@ -186,23 +186,26 @@ const StockMarketGame = () => {
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [gameTime, setGameTime] = useState(0);
-  const [sentiment, setSentiment] = useState(0);
-  const [regime, setRegime] = useState('Bull');
+  const [sentiment, setSentiment] = useState(defaultGameSettings.market.initialSentiment);
+  const [regime, setRegime] = useState(defaultGameSettings.market.initialRegime);
   const [showEvent, setShowEvent] = useState(false);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [pendingEventEffects, setPendingEventEffects] = useState(null);
 
   // Game settings
   const [gameSettings, setGameSettings] = useState(defaultGameSettings);
-  
+  // Track previous settings for diff logging
+  const prevSettingsRef = useRef(gameSettings);
+
   // Player state
-  const [startingCash, setStartingCash] = useState(100000);
-  const [availableFunds, setAvailableFunds] = useState(startingCash);
+  const [availableFunds, setAvailableFunds] = useState(gameSettings.game.startingCash);
   const [portfolio, setPortfolio] = useState({});
   const [selectedStock, setSelectedStock] = useState(null);
   const [tradeAmount, setTradeAmount] = useState(100);
   const [tradeType, setTradeType] = useState('buy');
   const [chartPeriod, setChartPeriod] = useState('1M');
+  // startingCash is always derived from gameSettings
+  const startingCash = gameSettings.game.startingCash;
   
   // Calculate portfolio value
   const portfolioValue = Object.entries(portfolio).reduce((total, [symbol, shares]) => {
@@ -222,7 +225,7 @@ const StockMarketGame = () => {
       // Check positive impacts
       const positiveImpact = eventEffects.sectorImpacts.positive.find(impact => impact.sector === stock.sector);
       if (positiveImpact) {
-        priceMultiplier *= (1 + positiveImpact.magnitude * 0.1);
+        priceMultiplier *= (1 + positiveImpact.magnitude * 0.1 * gameSettings.events.impactMultiplier);
         volatilityMultiplier *= (1 + positiveImpact.volatility);
         eventImpactMagnitude = Math.max(eventImpactMagnitude, positiveImpact.magnitude);
       }
@@ -230,7 +233,7 @@ const StockMarketGame = () => {
       // Check negative impacts
       const negativeImpact = eventEffects.sectorImpacts.negative.find(impact => impact.sector === stock.sector);
       if (negativeImpact) {
-        priceMultiplier *= (1 - negativeImpact.magnitude * 0.1);
+        priceMultiplier *= (1 - negativeImpact.magnitude * 0.1 * gameSettings.events.impactMultiplier);
         volatilityMultiplier *= (1 + negativeImpact.volatility);
         eventImpactMagnitude = Math.max(eventImpactMagnitude, negativeImpact.magnitude);
       }
@@ -246,7 +249,9 @@ const StockMarketGame = () => {
   
   // Update stock prices using individual Heston parameters and agent effects
   const updateStockPrices = useCallback((eventEffects = null) => {
-    const agentDemand = simulateAgents(stocks, sentiment, regime);
+    const agentDemand = gameSettings.market.enableAgentTrading ? 
+      simulateAgents(stocks, sentiment, regime) : 
+      {};
     
     setStocks(prevStocks => {
       let updatedStocks = prevStocks;
@@ -276,10 +281,10 @@ const StockMarketGame = () => {
         
         finalPrice = Math.round(finalPrice * 100) / 100;
         
-        // Apply volatility effects
-        let finalVolatility = newVol;
+        // Apply volatility effects  
+        let finalVolatility = newVol * gameSettings.market.volatilityMultiplier;
         if (stock.volatilityMultiplier) {
-          finalVolatility = Math.min(1.0, newVol * stock.volatilityMultiplier);
+          finalVolatility = Math.min(1.0, finalVolatility * stock.volatilityMultiplier);
         }
         
         // Generate volume based on agent activity and event impact
@@ -309,7 +314,7 @@ const StockMarketGame = () => {
         };
       });
     });
-  }, [stocks, sentiment, regime, gameTime]);
+  }, [stocks, sentiment, regime, gameTime, gameSettings.market.enableAgentTrading, gameSettings.market.volatilityMultiplier, gameSettings.events.impactMultiplier]);
   
   // Game loop
   useEffect(() => {
@@ -330,7 +335,7 @@ const StockMarketGame = () => {
         }
         
         // Check for new events
-        if (Math.random() < 0.08 && currentEventIndex < newsEvents.length) { // 8% chance per tick // TODO: no magic numbers, use a constant
+        if (gameSettings.events.enabled && Math.random() < gameSettings.events.eventProbability && currentEventIndex < newsEvents.length) {
           const event = newsEvents[currentEventIndex];
           setCurrentEvent(event);
           setShowEvent(true);
@@ -338,15 +343,15 @@ const StockMarketGame = () => {
         }
         
         // Update regime occasionally
-        if (Math.random() < 0.05) {
+        if (Math.random() < gameSettings.market.regimeChangeProbability) {
           const regimes = ['Bull', 'Bear', 'Volatile'];
           setRegime(regimes[Math.floor(Math.random() * regimes.length)]);
         }
-      }, 500); // Update every 500ms // TODO: no magic numbers, use a constant
+      }, gameSettings.game.tickInterval);
       
       return () => clearInterval(interval);
     }
-  }, [isPaused, updateStockPrices, currentEventIndex, newsEvents, pendingEventEffects]);
+  }, [isPaused, updateStockPrices, currentEventIndex, newsEvents, pendingEventEffects, gameSettings.game.tickInterval, gameSettings.events.eventProbability, gameSettings.events.enabled, gameSettings.market.regimeChangeProbability]);
 
   // Fetch news events on mount
   useEffect(() => {
@@ -381,7 +386,10 @@ const StockMarketGame = () => {
     const stock = stocks.find(s => s.symbol === selectedStock);
     if (!stock) return;
     
-    const totalCost = stock.price * tradeAmount;
+    const baseCost = stock.price * tradeAmount;
+    const tradingFee = gameSettings.game.tradingFeesEnabled ? 
+      baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
+    const totalCost = baseCost + tradingFee;
     const currentShares = portfolio[selectedStock] || 0;
     
     if (tradeType === 'buy' && availableFunds >= totalCost) {
@@ -391,7 +399,8 @@ const StockMarketGame = () => {
         [selectedStock]: currentShares + tradeAmount
       }));
     } else if (tradeType === 'sell' && currentShares >= tradeAmount) {
-      setAvailableFunds(prev => prev + totalCost);
+      const proceeds = baseCost - tradingFee;
+      setAvailableFunds(prev => prev + proceeds);
       setPortfolio(prev => ({
         ...prev,
         [selectedStock]: currentShares - tradeAmount
@@ -641,15 +650,39 @@ const StockMarketGame = () => {
               </div>
               
               <div className="text-sm text-gray-400">
-                Total: ${((stocks.find(s => s.symbol === selectedStock)?.price || 0) * tradeAmount).toLocaleString()}
+                {(() => {
+                  const stock = stocks.find(s => s.symbol === selectedStock);
+                  const baseCost = (stock?.price || 0) * tradeAmount;
+                  const tradingFee = gameSettings.game.tradingFeesEnabled ? 
+                    baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
+                  const totalCost = baseCost + tradingFee;
+                  
+                  return (
+                    <div>
+                      <div>Base Cost: ${baseCost.toLocaleString()}</div>
+                      {gameSettings.game.tradingFeesEnabled && (
+                        <div>Trading Fee ({gameSettings.game.tradingFeePercent}%): ${tradingFee.toLocaleString()}</div>
+                      )}
+                      <div className="font-semibold">
+                        Total: ${totalCost.toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               
               <button
                 onClick={executeTrade}
-                disabled={
-                  (tradeType === 'buy' && availableFunds < (stocks.find(s => s.symbol === selectedStock)?.price || 0) * tradeAmount) ||
-                  (tradeType === 'sell' && (portfolio[selectedStock] || 0) < tradeAmount)
-                }
+                disabled={(() => {
+                  const stock = stocks.find(s => s.symbol === selectedStock);
+                  const baseCost = (stock?.price || 0) * tradeAmount;
+                  const tradingFee = gameSettings.game.tradingFeesEnabled ? 
+                    baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
+                  const totalCost = baseCost + tradingFee;
+                  
+                  return (tradeType === 'buy' && availableFunds < totalCost) ||
+                         (tradeType === 'sell' && (portfolio[selectedStock] || 0) < tradeAmount);
+                })()}
                 className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded font-bold"
               >
                 Execute Trade
@@ -729,11 +762,37 @@ const StockMarketGame = () => {
       {/* Settings/Dev Panel */}
       <SettingsPanel 
         gameSettings={gameSettings}
-        onSettingsChange={setGameSettings}
-        
+        onSettingsChange={newSettings => {
+          // Log the update and diff
+          console.log('[SettingsPanel -> App] Settings updated:', newSettings);
+          // Show what changed
+          const prev = prevSettingsRef.current;
+          const changes = {};
+          Object.keys(newSettings).forEach(category => {
+            changes[category] = {};
+            Object.keys(newSettings[category]).forEach(key => {
+              if (prev[category][key] !== newSettings[category][key]) {
+                changes[category][key] = {
+                  from: prev[category][key],
+                  to: newSettings[category][key]
+                };
+              }
+            });
+            // Remove empty change objects
+            if (Object.keys(changes[category]).length === 0) {
+              delete changes[category];
+            }
+          });
+          if (Object.keys(changes).length > 0) {
+            console.log('[SettingsPanel -> App] Changed:', changes);
+          } else {
+            console.log('[SettingsPanel -> App] No changes detected.');
+          }
+          prevSettingsRef.current = newSettings;
+          setGameSettings(newSettings);
+        }}
         onResetGame={() => {
           setStocks(generateCompanies());
-          setStartingCash(gameSettings.game.startingCash);
           setAvailableFunds(gameSettings.game.startingCash);
           setPortfolio({});
           setGameTime(0);
@@ -741,6 +800,9 @@ const StockMarketGame = () => {
           setRegime(gameSettings.market.initialRegime);
           setCurrentEventIndex(0);
           setIsPaused(true);
+        }}
+        onAddFunds={amount => {
+          setAvailableFunds(prev => Math.max(0, prev + amount));
         }}
       />
     </div>
