@@ -34,14 +34,15 @@ const SettingsPanel = ({
     { id: 'game', label: 'Game', icon: DollarSign },
     { id: 'market', label: 'Market', icon: TrendingUp },
     { id: 'events', label: 'Events', icon: Zap },
-    { id: 'advanced', label: 'Advanced', icon: Settings }
+    { id: 'advanced', label: 'Advanced', icon: Settings },
+    { id: 'cheats', label: 'Cheats', icon: AlertTriangle },
   ];
 
   // Game Settings: Starting Cash, Available Funds, Game (Tick) Speed, Trading Fees, Short Selling
   const renderGameSettings = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-white mb-3">Game Settings</h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {/* Starting Cash */}
         <div>
           <label className="block text-sm text-gray-300 mb-2">Starting Cash ($)</label>
@@ -57,29 +58,6 @@ const SettingsPanel = ({
             max="1000000"
             step="1000"
           />
-        </div>
-
-        {/* Add Funds */}
-        <div>
-          <label className="block text-sm text-gray-300 mb-2">Add Funds ($)</label>
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              const value = parseFloat(e.target.elements.addFunds.value);
-              if (!isNaN(value) && value !== 0) {
-                if (typeof onAddFunds === 'function') onAddFunds(value);
-              }
-            }}
-          >
-            <input
-              type="number"
-              name="addFunds"
-              className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              step="100"
-              placeholder="Enter amount (+/-)"
-            />
-            <button type="submit" className="mt-2 w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold">Apply</button>
-          </form>
         </div>
 
         {/* Tick Speed */}
@@ -103,16 +81,23 @@ const SettingsPanel = ({
       {/* Trading Fee Toggle */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Enable Trading Fees</label>
-        <button
-          onClick={() => handleSettingChange('game', 'tradingFeesEnabled', !gameSettings.game.tradingFeesEnabled)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.game.tradingFeesEnabled ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.game.tradingFeesEnabled ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.game.tradingFeesEnabled}
+            onChange={() =>
+              handleSettingChange(
+                'game',
+                'tradingFeesEnabled',
+                !gameSettings.game.tradingFeesEnabled
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
 
       {/* Trading Fee Input */}
@@ -137,16 +122,23 @@ const SettingsPanel = ({
       {/* Short Selling Toggle */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Allow Short Selling</label>
-        <button
-          onClick={() => handleSettingChange('game', 'allowShortSelling', !gameSettings.game.allowShortSelling)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.game.allowShortSelling ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.game.allowShortSelling ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+        
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.game.allowShortSelling}
+            onChange={() =>
+              handleSettingChange(
+                'game',
+                'allowShortSelling',
+                !gameSettings.game.allowShortSelling
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
     </div>
   );
@@ -229,16 +221,23 @@ const SettingsPanel = ({
       {/* Agent Trading Toggle */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Enable Agent Trading</label>
-        <button
-          onClick={() => handleSettingChange('market', 'enableAgentTrading', !gameSettings.market.enableAgentTrading)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.market.enableAgentTrading ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.market.enableAgentTrading ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+        
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.market.enableAgentTrading}
+            onChange={() =>
+              handleSettingChange(
+                'market',
+                'enableAgentTrading',
+                !gameSettings.market.enableAgentTrading
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
     </div>
   );
@@ -247,19 +246,27 @@ const SettingsPanel = ({
   const renderEventsSettings = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-white mb-3">Events Settings</h3>
-      
+
+      {/* Enable News Events */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Enable News Events</label>
-        <button
-          onClick={() => handleSettingChange('events', 'enabled', !gameSettings.events.enabled)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.events.enabled ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.events.enabled ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+        
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.events.enabled}
+            onChange={() =>
+              handleSettingChange(
+                'events',
+                'enabled',
+                !gameSettings.events.enabled
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
 
       {gameSettings.events.enabled && (
@@ -291,7 +298,7 @@ const SettingsPanel = ({
                   handleSettingChange('events', 'impactMultiplier', isNaN(value) ? 1.0 : value);
                 }}
                 className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                min="0.1"
+                min="0.0"
                 max="5.0"
                 step="0.1"
               />
@@ -300,16 +307,23 @@ const SettingsPanel = ({
 
           <div className="flex items-center justify-between">
             <label className="text-sm text-gray-300">Auto-Continue Events</label>
-            <button
-              onClick={() => handleSettingChange('events', 'autoContinue', !gameSettings.events.autoContinue)}
-              className={`w-12 h-6 rounded-full transition-colors ${
-                gameSettings.events.autoContinue ? 'bg-blue-600' : 'bg-gray-600'
-              }`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                gameSettings.events.autoContinue ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+            
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gameSettings.events.autoContinue}
+                onChange={() =>
+                  handleSettingChange(
+                    'events',
+                    'autoContinue',
+                    !gameSettings.events.autoContinue
+                  )
+                }
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </label>
           </div>
 
           {gameSettings.events.autoContinue && (
@@ -340,32 +354,47 @@ const SettingsPanel = ({
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-white mb-3">Advanced Settings</h3>
       
+      {/* Developer Mode */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Developer Mode</label>
-        <button
-          onClick={() => handleSettingChange('advanced', 'developerMode', !gameSettings.advanced.developerMode)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.advanced.developerMode ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.advanced.developerMode ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+        
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.advanced.developerMode}
+            onChange={() =>
+              handleSettingChange(
+                'advanced',
+                'developerMode',
+                !gameSettings.advanced.developerMode
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
 
+      {/* Show Debug Info */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-gray-300">Show Debug Info</label>
-        <button
-          onClick={() => handleSettingChange('advanced', 'showDebugInfo', !gameSettings.advanced.showDebugInfo)}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            gameSettings.advanced.showDebugInfo ? 'bg-blue-600' : 'bg-gray-600'
-          }`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-            gameSettings.advanced.showDebugInfo ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={gameSettings.advanced.showDebugInfo}
+            onChange={() =>
+              handleSettingChange(
+                'advanced',
+                'showDebugInfo',
+                !gameSettings.advanced.showDebugInfo
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -418,12 +447,42 @@ const SettingsPanel = ({
     </div>
   );
 
+  // Cheats: Adding Funds
+  const renderCheats = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-white mb-3">Cheats</h3>
+        {/* Add Funds */}
+        <div>
+          <label className="block text-sm text-gray-300 mb-2">Add Funds ($)</label>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              const value = parseFloat(e.target.elements.addFunds.value);
+              if (!isNaN(value) && value !== 0) {
+                if (typeof onAddFunds === 'function') onAddFunds(value);
+              }
+            }}
+          >
+            <input
+              type="number"
+              name="addFunds"
+              className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              step="100"
+              placeholder="Enter amount (+/-)"
+            />
+            <button type="submit" className="mt-2 w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold">Apply</button>
+          </form>
+        </div>
+      </div>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'game': return renderGameSettings();
       case 'market': return renderMarketSettings();
       case 'events': return renderEventsSettings();
       case 'advanced': return renderAdvancedSettings();
+      case 'cheats': return renderCheats();
       default: return renderGameSettings();
     }
   };
