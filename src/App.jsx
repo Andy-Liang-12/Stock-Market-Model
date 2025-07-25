@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
 import { TrendingUp, TrendingDown, Pause, Play, DollarSign, Activity, Globe } from 'lucide-react';
+import SettingsPanel, { defaultGameSettings } from './SettingsPanel';
 
 // Game configuration
 // const SECTORS = ['Technology', 'Healthcare', 'Finance', 'Energy', 'Consumer', 'Industrial'];
@@ -288,9 +289,13 @@ const StockMarketGame = () => {
   const [showEvent, setShowEvent] = useState(false);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [pendingEventEffects, setPendingEventEffects] = useState(null);
+
+  // Game settings
+  const [gameSettings, setGameSettings] = useState(defaultGameSettings);
   
   // Player state
-  const [cash, setCash] = useState(100000);
+  const [startingCash, setStartingCash] = useState(100000);
+  const [availableFunds, setAvailableFunds] = useState(startingCash);
   const [portfolio, setPortfolio] = useState({});
   const [selectedStock, setSelectedStock] = useState(null);
   const [tradeAmount, setTradeAmount] = useState(100);
@@ -303,7 +308,7 @@ const StockMarketGame = () => {
     return total + (stock ? stock.price * shares : 0);
   }, 0);
   
-  const totalValue = cash + portfolioValue;
+  const totalValue = availableFunds + portfolioValue;
   
   // Apply event effects to stocks
   const applyEventEffects = (stocks, eventEffects) => {
@@ -466,14 +471,14 @@ const StockMarketGame = () => {
     const totalCost = stock.price * tradeAmount;
     const currentShares = portfolio[selectedStock] || 0;
     
-    if (tradeType === 'buy' && cash >= totalCost) {
-      setCash(prev => prev - totalCost);
+    if (tradeType === 'buy' && availableFunds >= totalCost) {
+      setAvailableFunds(prev => prev - totalCost);
       setPortfolio(prev => ({
         ...prev,
         [selectedStock]: currentShares + tradeAmount
       }));
     } else if (tradeType === 'sell' && currentShares >= tradeAmount) {
-      setCash(prev => prev + totalCost);
+      setAvailableFunds(prev => prev + totalCost);
       setPortfolio(prev => ({
         ...prev,
         [selectedStock]: currentShares - tradeAmount
@@ -543,9 +548,9 @@ const StockMarketGame = () => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
             <DollarSign className="w-5 h-5 text-green-400" />
-            <span className="text-sm text-gray-400">Cash</span>
+            <span className="text-sm text-gray-400">Available Funds</span>
           </div>
-          <span className="text-xl font-bold">${cash.toLocaleString()}</span>
+          <span className="text-xl font-bold">${availableFunds.toLocaleString()}</span>
         </div>
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
@@ -565,8 +570,8 @@ const StockMarketGame = () => {
           <div className="flex items-center space-x-2 mb-2">
             <span className="text-sm text-gray-400">P&L</span>
           </div>
-          <span className={`text-xl font-bold ${totalValue >= 100000 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalValue >= 100000 ? '+' : ''}${(totalValue - 100000).toLocaleString()}
+          <span className={`text-xl font-bold ${totalValue >= startingCash ? 'text-green-400' : 'text-red-400'}`}>
+            {totalValue >= startingCash ? '+' : ''}${(totalValue - startingCash).toLocaleString()}
           </span>
         </div>
       </div>
@@ -729,7 +734,7 @@ const StockMarketGame = () => {
               <button
                 onClick={executeTrade}
                 disabled={
-                  (tradeType === 'buy' && cash < (stocks.find(s => s.symbol === selectedStock)?.price || 0) * tradeAmount) ||
+                  (tradeType === 'buy' && availableFunds < (stocks.find(s => s.symbol === selectedStock)?.price || 0) * tradeAmount) ||
                   (tradeType === 'sell' && (portfolio[selectedStock] || 0) < tradeAmount)
                 }
                 className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded font-bold"
@@ -807,6 +812,24 @@ const StockMarketGame = () => {
           </div>
         </div>
       )}
+
+      {/* Settings/Dev Panel */}
+      <SettingsPanel 
+        gameSettings={gameSettings}
+        onSettingsChange={setGameSettings}
+        
+        onResetGame={() => {
+          setStocks(generateCompanies());
+          setStartingCash(gameSettings.game.startingCash);
+          setAvailableFunds(gameSettings.game.startingCash);
+          setPortfolio({});
+          setGameTime(0);
+          setSentiment(gameSettings.market.initialSentiment);
+          setRegime(gameSettings.market.initialRegime);
+          setCurrentEventIndex(0);
+          setIsPaused(true);
+        }}
+      />
     </div>
   );
 };
