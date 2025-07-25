@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1,
+    "description": "Federal Reserve raises interest rates by 0.5%",
+    "sectorImpacts": {
+      "positive": [{ "sector": "Finance", "magnitude": 0.7, "volatility": 0.3 }],
+      "negative": [
+        { "sector": "Technology", "magnitude": 0.5, "volatility": 0.4 },
+        { "sector": "Consumer", "magnitude": 0.4, "volatility": 0.3 }
+      ]
+    },
+    "deltaSentiment": -0.2,
+    "significance": 0.8
+  },
+  {
+    "id": 2,
+    "description": "Major breakthrough in AI technology announced",
+    "sectorImpacts": {
+      "positive": [
+        { "sector": "Technology", "magnitude": 0.8, "volatility": 0.2 },
+        { "sector": "Healthcare", "magnitude": 0.3, "volatility": 0.2 }
+      ],
+      "negative": []
+    },
+    "deltaSentiment": 0.3,
+    "significance": 0.7
+  },
+  {
+    "id": 3,
+    "description": "Healthcare reform bill passes Congress with major changes",
+    "sectorImpacts": {
+      "positive": [],
+      "negative": [{ "sector": "Healthcare", "magnitude": 0.6, "volatility": 0.4 }]
+    },
+    "deltaSentiment": -0.1,
+    "significance": 0.9
+  },
+  {
+    "id": 4,
+    "description": "Oil prices surge 40% due to supply chain disruption",
+    "sectorImpacts": {
+      "positive": [{ "sector": "Energy", "magnitude": 0.9, "volatility": 0.5 }],
+      "negative": [
+        { "sector": "Industrial", "magnitude": 0.6, "volatility": 0.4 },
+        { "sector": "Consumer", "magnitude": 0.4, "volatility": 0.3 }
+      ]
+    },
+    "deltaSentiment": -0.3,
+    "significance": 0.8
+  },
+  {
+    "id": 5,
+    "description": "Consumer confidence index hits 5-year high",
+    "sectorImpacts": {
+      "positive": [
+        { "sector": "Consumer", "magnitude": 0.7, "volatility": 0.2 },
+        { "sector": "Finance", "magnitude": 0.4, "volatility": 0.2 }
+      ],
+      "negative": []
+    },
+    "deltaSentiment": 0.4,
+    "significance": 0.6
+  },
+  {
+    "id": 6,
+    "description": "Global trade tensions escalate with new tariffs",
+    "sectorImpacts": {
+      "positive": [],
+      "negative": [
+        { "sector": "Industrial", "magnitude": 0.8, "volatility": 0.6 },
+        { "sector": "Technology", "magnitude": 0.6, "volatility": 0.5 },
+        { "sector": "Consumer", "magnitude": 0.5, "volatility": 0.4 }
+      ]
+    },
+    "deltaSentiment": -0.5,
+    "significance": 0.9
+  },
+  {
+    "id": 7,
+    "description": "Strong jobs report shows unemployment at decade low",
+    "sectorImpacts": {
+      "positive": [
+        { "sector": "Finance", "magnitude": 0.5, "volatility": 0.2 },
+        { "sector": "Consumer", "magnitude": 0.6, "volatility": 0.2 },
+        { "sector": "Industrial", "magnitude": 0.4, "volatility": 0.2 }
+      ],
+      "negative": []
+    },
+    "deltaSentiment": 0.4,
+    "significance": 0.7
+  },
+  {
+    "id": 8,
+    "description": "COVID-19 Sigma variant infects global population",
+    "sectorImpacts": {
+      "positive": [
+        { "sector": "Healthcare", "magnitude": 0.6, "volatility": 0.3 },
+        { "sector": "Technology", "magnitude": 0.3, "volatility": 0.2 }
+      ],
+      "negative": [
+        { "sector": "Energy", "magnitude": 0.7, "volatility": 0.5 },
+        { "sector": "Industrial", "magnitude": 0.8, "volatility": 0.6 },
+        { "sector": "Finance", "magnitude": 0.5, "volatility": 0.4 },
+        { "sector": "Consumer", "magnitude": 0.6, "volatility": 0.4 }
+      ]
+    },
+    "deltaSentiment": -0.6,
+    "significance": 1.0
+  }
+]

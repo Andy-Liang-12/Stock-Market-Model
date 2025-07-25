@@ -57,120 +57,22 @@ const generateCompanies = () => {
 };
 
 // Generate news events with positive/negative sector impacts and sentiment deltas
-// TODO: refactor into a separate JSON file, fetch when game starts
-const generateNewsEvents = () => {
-  const events = [
-    {
-      id: 1,
-      description: "Federal Reserve raises interest rates by 0.5%",
-      sectorImpacts: {
-        positive: [{ sector: 'Finance', magnitude: 0.7, volatility: 0.3 }],
-        negative: [
-          { sector: 'Technology', magnitude: 0.5, volatility: 0.4 },
-          { sector: 'Consumer', magnitude: 0.4, volatility: 0.3 }
-        ]
-      },
-      deltaSentiment: -0.2,
-      significance: 0.8
-    },
-    {
-      id: 2,
-      description: "Major breakthrough in AI technology announced",
-      sectorImpacts: {
-        positive: [
-          { sector: 'Technology', magnitude: 0.8, volatility: 0.2 },
-          { sector: 'Healthcare', magnitude: 0.3, volatility: 0.2 }
-        ],
-        negative: []
-      },
-      deltaSentiment: 0.3,
-      significance: 0.7
-    },
-    {
-      id: 3,
-      description: "Healthcare reform bill passes Congress with major changes",
-      sectorImpacts: {
-        positive: [],
-        negative: [{ sector: 'Healthcare', magnitude: 0.6, volatility: 0.4 }]
-      },
-      deltaSentiment: -0.1,
-      significance: 0.9
-    },
-    {
-      id: 4,
-      description: "Oil prices surge 40% due to supply chain disruption",
-      sectorImpacts: {
-        positive: [{ sector: 'Energy', magnitude: 0.9, volatility: 0.5 }],
-        negative: [
-          { sector: 'Industrial', magnitude: 0.6, volatility: 0.4 },
-          { sector: 'Consumer', magnitude: 0.4, volatility: 0.3 }
-        ]
-      },
-      deltaSentiment: -0.3,
-      significance: 0.8
-    },
-    {
-      id: 5,
-      description: "Consumer confidence index hits 5-year high",
-      sectorImpacts: {
-        positive: [
-          { sector: 'Consumer', magnitude: 0.7, volatility: 0.2 },
-          { sector: 'Finance', magnitude: 0.4, volatility: 0.2 }
-        ],
-        negative: []
-      },
-      deltaSentiment: 0.4,
-      significance: 0.6
-    },
-    {
-      id: 6,
-      description: "Global trade tensions escalate with new tariffs",
-      sectorImpacts: {
-        positive: [],
-        negative: [
-          { sector: 'Industrial', magnitude: 0.8, volatility: 0.6 },
-          { sector: 'Technology', magnitude: 0.6, volatility: 0.5 },
-          { sector: 'Consumer', magnitude: 0.5, volatility: 0.4 }
-        ]
-      },
-      deltaSentiment: -0.5,
-      significance: 0.9
-    },
-    {
-      id: 7,
-      description: "Strong jobs report shows unemployment at decade low",
-      sectorImpacts: {
-        positive: [
-          { sector: 'Finance', magnitude: 0.5, volatility: 0.2 },
-          { sector: 'Consumer', magnitude: 0.6, volatility: 0.2 },
-          { sector: 'Industrial', magnitude: 0.4, volatility: 0.2 }
-        ],
-        negative: []
-      },
-      deltaSentiment: 0.4,
-      significance: 0.7
-    },
-    {
-      id: 8,
-      description: "New pandemic variant causes global concern",
-      sectorImpacts: {
-        positive: [
-          { sector: 'Healthcare', magnitude: 0.6, volatility: 0.3 },
-          { sector: 'Technology', magnitude: 0.3, volatility: 0.2 }
-        ],
-        negative: [
-          { sector: 'Energy', magnitude: 0.7, volatility: 0.5 },
-          { sector: 'Industrial', magnitude: 0.8, volatility: 0.6 },
-          { sector: 'Finance', magnitude: 0.5, volatility: 0.4 },
-          { sector: 'Consumer', magnitude: 0.6, volatility: 0.4 }
-        ]
-      },
-      deltaSentiment: -0.6,
-      significance: 1.0
+const fetchNewsEvents = async () => {
+  try {
+    console.log('Fetching news events...');
+    const response = await fetch('/newsEvents.json');
+    console.log('Fetch response:', response);
+    if (!response.ok) {
+      console.error('Failed to fetch news events:', response.status, response.statusText);
+      throw new Error('Failed to fetch news events');
     }
-  ];
-  
-  return events;
+    const data = await response.json();
+    console.log('Fetched news events:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in fetchNewsEvents:', error);
+    throw error;
+  }
 };
 
 // Heston model simulation with individual parameters
@@ -280,7 +182,7 @@ const filterHistoryByPeriod = (history, period) => {
 const StockMarketGame = () => {
   // Game state
   const [stocks, setStocks] = useState(() => generateCompanies());
-  const [newsEvents] = useState(() => generateNewsEvents());
+  const [newsEvents, setNewsEvents] = useState([]); // Will be fetched on game start
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [gameTime, setGameTime] = useState(0);
@@ -414,6 +316,7 @@ const StockMarketGame = () => {
     if (!isPaused) {
       const interval = setInterval(() => {
         setGameTime(prev => prev + 1);
+        console.log(`Tick: ${gameTime}`);
         
         // Update sentiment stochastically
         setSentiment(prev => updateSentiment(prev));
@@ -444,6 +347,16 @@ const StockMarketGame = () => {
       return () => clearInterval(interval);
     }
   }, [isPaused, updateStockPrices, currentEventIndex, newsEvents, pendingEventEffects]);
+
+  // Fetch news events on mount
+  useEffect(() => {
+  fetchNewsEvents()
+    .then(setNewsEvents)
+    .catch(err => {
+      console.error('Failed to load news events:', err);
+      setNewsEvents([]); // fallback to empty array
+    });
+  }, []);
   
   // Handle news event response - sets up effects to be applied on next tick
   const handleEventResponse = () => {
