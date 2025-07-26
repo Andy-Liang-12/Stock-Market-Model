@@ -8,7 +8,8 @@ const SettingsPanel = ({
   gameSettings,
   onSettingsChange,
   onResetGame,
-  onAddFunds
+  onAddFunds,
+  onOpenSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('game');
@@ -491,7 +492,7 @@ const SettingsPanel = ({
     <>
       {/* Settings Button */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => { onOpenSettings(); setIsOpen(true); }}
         className="fixed top-4 right-4 p-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-600 transition-colors z-40"
         title="Settings"
       >
