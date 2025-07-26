@@ -314,7 +314,7 @@ const StockMarketGame = () => {
         };
       });
     });
-  }, [stocks, sentiment, regime, gameTime, gameSettings.market.enableAgentTrading, gameSettings.market.volatilityMultiplier, gameSettings.events.impactMultiplier]);
+  }, [stocks, sentiment, regime, gameTime, gameSettings.market.enableAgentTrading, gameSettings.market.volatilityMultiplier]);
   
   // Game loop
   useEffect(() => {
@@ -761,8 +761,8 @@ const StockMarketGame = () => {
 
       {/* Settings/Dev Panel */}
       <SettingsPanel 
-        gameSettings={gameSettings}
-        onSettingsChange={newSettings => {
+        gameSettings = {gameSettings}
+        onSettingsChange = {newSettings => {
           // Log the update and diff
           console.log('[SettingsPanel -> App] Settings updated:', newSettings);
           // Show what changed
@@ -803,6 +803,10 @@ const StockMarketGame = () => {
         }}
         onAddFunds={amount => {
           setAvailableFunds(prev => Math.max(0, prev + amount));
+        }}
+        onOpenSettings={() => {
+          console.log('Settings opened, Game paused');
+          setIsPaused(true); // Pause the game when settings are open
         }}
       />
     </div>
