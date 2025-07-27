@@ -76,6 +76,7 @@ const fetchNewsEvents = async () => {
 };
 
 // Heston model simulation with individual parameters
+// TODO: check if this is correct
 const hestonStep = (price, volatility, hestonParams, dt = 1/252) => {
   const { drift, volOfVol, meanReversion, longTermVol, correlation } = hestonParams;
   
@@ -117,6 +118,7 @@ const simulateAgents = (stocks, sentiment, regime) => {
       (stock.price - stock.history[stock.history.length - 2].price) / stock.history[stock.history.length - 2].price : 0;
     
     // Fundamentalists
+    // TODO: THIS CODE IS DEFINITELY A PROBLEM. QUALITY IS NOT INTENDED TO BE USED THIS WAY.
     const fundamentalValue = stock.quality * 100;
     if (stock.price < fundamentalValue) demand += 0.3;
     else if (stock.price > fundamentalValue) demand -= 0.3;
@@ -180,7 +182,7 @@ const filterHistoryByPeriod = (history, period) => {
 };
 
 const StockMarketGame = () => {
-  // Game settings
+  // Game settings (fetched from SettingsPanel)
   const [gameSettings, setGameSettings] = useState(defaultGameSettings);
 
   // Game state

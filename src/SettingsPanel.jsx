@@ -575,7 +575,7 @@ export const defaultGameSettings = {
     volatilityMultiplier: 1.0,
     initialSentiment: 0.0,
     regimeChangeProbability: 0.05,
-    enableAgentTrading: true
+    enableAgentTrading: false
   },
   events: {
     enabled: true,
