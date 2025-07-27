@@ -180,20 +180,22 @@ const filterHistoryByPeriod = (history, period) => {
 };
 
 const StockMarketGame = () => {
+  // Game settings
+  const [gameSettings, setGameSettings] = useState(defaultGameSettings);
+
   // Game state
   const [stocks, setStocks] = useState(() => generateCompanies());
   const [newsEvents, setNewsEvents] = useState([]); // Will be fetched on game start
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [gameTime, setGameTime] = useState(0);
-  const [sentiment, setSentiment] = useState(defaultGameSettings.market.initialSentiment);
-  const [regime, setRegime] = useState(defaultGameSettings.market.initialRegime);
+  const [sentiment, setSentiment] = useState(gameSettings.market.initialSentiment);
+  const [regime, setRegime] = useState(gameSettings.market.initialRegime);
   const [showEvent, setShowEvent] = useState(false);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [pendingEventEffects, setPendingEventEffects] = useState(null);
 
-  // Game settings
-  const [gameSettings, setGameSettings] = useState(defaultGameSettings);
+
   // Track previous settings for diff logging
   const prevSettingsRef = useRef(gameSettings);
 
@@ -436,7 +438,7 @@ const StockMarketGame = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
+    <div className="min-h-screen w-screen bg-gray-900 text-white p-4">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Stock Market Training Game</h1>
@@ -498,7 +500,7 @@ const StockMarketGame = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-6 w-full">
         {/* Stock List */}
         <div className="bg-gray-800 p-4 rounded-lg">
           <h2 className="text-xl font-bold mb-4">Stocks</h2>
@@ -552,10 +554,41 @@ const StockMarketGame = () => {
         
         {/* Price Chart */}
         <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">
-              Price Chart {selectedStock && `- ${selectedStock}`}
-            </h2>
+          <h2 className="text-xl font-bold mb-4">
+            {selectedStock ? `${selectedStock} ($${stocks.find(s => s.symbol === selectedStock)?.price.toFixed(2)})` : ''}
+          </h2>
+
+          {/* Percentage change display */}
+          {selectedStock && stocks.find(s => s.symbol === selectedStock)?.history.length > 1 && (
+            (() => {
+              const history = filterHistoryByPeriod(stocks.find(s => s.symbol === selectedStock).history, chartPeriod);
+              if (history.length < 2) return null;
+              const startPrice = history[0].price;
+              const endPrice = history[history.length - 1].price;
+              const absChange = endPrice - startPrice;
+              const percentChange = ((endPrice - startPrice) / startPrice) * 100;
+              // Map chartPeriod to label
+              const periodLabels = {
+                '1W': 'past week',
+                '1M': 'past month',
+                '6M': 'past 6 months',
+                '1Y': 'past year',
+                'ALL': 'all time'
+              };
+              const periodLabel = periodLabels[chartPeriod] || chartPeriod;
+              return (
+                <div className="mb-4 text-lg font-semibold flex items-center">
+                  <span className={absChange >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {absChange >= 0 ? '+' : ''}{absChange.toFixed(2)} ({percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%)&nbsp;
+                    {absChange >= 0 ? <TrendingUp className="w-4 h-4 inline-block mr-1 align-middle" /> : <TrendingDown className="w-4 h-4 inline-block mr-1 align-middle" />}
+                    {periodLabel}
+                  </span>
+                </div>
+              );
+            })()
+          )}
+
+          <div className="flex justify-left items-center mb-4">
             <div className="flex space-x-2">
               {['1W', '1M', '6M', '1Y', 'ALL'].map(period => (
                 <button
@@ -570,6 +603,7 @@ const StockMarketGame = () => {
               ))}
             </div>
           </div>
+
           {selectedStock && stocks.find(s => s.symbol === selectedStock)?.history.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
