@@ -11,13 +11,6 @@ import SettingsPanel, { defaultGameSettings } from './SettingsPanel';
 // Generate realistic Heston parameters using normal distribution
 // TODO: calibrate to real market data, currently arbitrary guesses as a placeholder
 const generateHestonParams = () => {
-  const normalRandom = (mean, stdDev) => {
-    const u = Math.random();
-    const v = Math.random();
-    const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    return z * stdDev + mean;
-  };
-
   return {
     drift: Math.max(0.01, normalRandom(0.08, 0.03)), // 8% ± 3%
     volOfVol: Math.max(0.1, normalRandom(0.3, 0.1)), // 30% ± 10%
@@ -25,6 +18,13 @@ const generateHestonParams = () => {
     longTermVol: Math.max(0.1, normalRandom(0.25, 0.05)), // 25% ± 5%
     correlation: Math.max(-0.9, Math.min(-0.3, normalRandom(-0.7, 0.2))) // -70% ± 20%
   };
+};
+
+const normalRandom = (mean, stdDev) => {
+    const u = Math.random();
+    const v = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    return z * stdDev + mean;
 };
 
 // Generate fictional companies with individual Heston parameters
@@ -80,10 +80,13 @@ const fetchNewsEvents = async () => {
 const hestonStep = (price, volatility, hestonParams, dt = 1/252) => {
   const { drift, volOfVol, meanReversion, longTermVol, correlation } = hestonParams;
   
-  const dW1 = Math.random() * Math.sqrt(dt) - Math.sqrt(dt) / 2;
-  const dW2 = correlation * dW1 + Math.sqrt(1 - correlation * correlation) * (Math.random() * Math.sqrt(dt) - Math.sqrt(dt) / 2);
+  const dW1 = normalRandom(0, 1) * Math.sqrt(dt);
+  const dW2 = correlation * dW1 + Math.sqrt(1 - correlation * correlation) * normalRandom(0, 1) * Math.sqrt(dt);
   
-  const newVol = Math.max(0.01, volatility + meanReversion * (longTermVol - volatility) * dt + volOfVol * Math.sqrt(volatility) * dW2);
+  // Full truncation Euler for volatility to avoid imaginary numbers
+  const volSqrt = Math.sqrt(Math.max(volatility, 0));
+  const newVol = Math.max(0.0, volatility + meanReversion * (longTermVol - volatility) * dt + volOfVol * volSqrt * dW2);
+  
   const newPrice = price * Math.exp((drift - 0.5 * volatility) * dt + Math.sqrt(volatility) * dW1);
   
   return { price: Math.round(newPrice * 100) / 100, volatility: newVol };
