@@ -20,6 +20,7 @@ const generateHestonParams = () => {
   };
 };
 
+// Box-Muller transform for generating normally distributed random numbers
 const normalRandom = (mean, stdDev) => {
     const u = Math.random();
     const v = Math.random();
