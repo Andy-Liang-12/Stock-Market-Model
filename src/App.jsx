@@ -212,6 +212,7 @@ const StockMarketGame = () => {
   const [tradeAmount, setTradeAmount] = useState(100);
   const [tradeType, setTradeType] = useState('buy');
   const [chartPeriod, setChartPeriod] = useState('1M');
+  const [tradeMode, setTradeMode] = useState('shares');
   // startingCash is always derived from gameSettings
   const startingCash = gameSettings.game.startingCash;
   
@@ -390,28 +391,31 @@ const StockMarketGame = () => {
   // Trading functions
   const executeTrade = () => {
     if (!selectedStock || tradeAmount <= 0) return;
-    
     const stock = stocks.find(s => s.symbol === selectedStock);
     if (!stock) return;
-    
-    const baseCost = stock.price * tradeAmount;
+    let shares = tradeAmount;
+    let baseCost = stock.price * tradeAmount;
+    if (tradeMode === 'dollars') {
+      shares = Math.floor((tradeAmount / stock.price) * 10000) / 10000;
+      baseCost = shares * stock.price;
+    } else {
+      shares = Math.floor(shares * 10000) / 10000;
+    }
     const tradingFee = gameSettings.game.tradingFeesEnabled ? 
       baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
     const totalCost = baseCost + tradingFee;
     const currentShares = portfolio[selectedStock] || 0;
-    
-    if (tradeType === 'buy' && availableFunds >= totalCost) {
+    if (tradeType === 'buy' && availableFunds >= totalCost && shares > 0) {
       setAvailableFunds(prev => prev - totalCost);
       setPortfolio(prev => ({
         ...prev,
-        [selectedStock]: currentShares + tradeAmount
+        [selectedStock]: (prev[selectedStock] || 0) + shares
       }));
-    } else if (tradeType === 'sell' && currentShares >= tradeAmount) {
-      const proceeds = baseCost - tradingFee;
-      setAvailableFunds(prev => prev + proceeds);
+    } else if (tradeType === 'sell' && currentShares >= shares && shares > 0) {
+      setAvailableFunds(prev => prev + baseCost - tradingFee);
       setPortfolio(prev => ({
         ...prev,
-        [selectedStock]: currentShares - tradeAmount
+        [selectedStock]: (prev[selectedStock] || 0) - shares
       }));
     }
   };
@@ -656,50 +660,77 @@ const StockMarketGame = () => {
                 </div>
               </div>
               
+              {/* Buy and Sell Buttons */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Action</label>
                 <div className="flex space-x-2">
                   <button
+                    type="button"
                     onClick={() => setTradeType('buy')}
-                    className={`flex-1 py-2 px-4 rounded ${
-                      tradeType === 'buy' ? 'bg-green-600' : 'bg-gray-700 hover:bg-gray-600'
-                    }`}
+                    className={`flex-1 py-2 px-4 rounded-l border-r border-gray-600 transition-colors font-bold ${tradeType === 'buy' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
                   >
                     Buy
                   </button>
                   <button
+                    type="button"
                     onClick={() => setTradeType('sell')}
-                    className={`flex-1 py-2 px-4 rounded ${
-                      tradeType === 'sell' ? 'bg-red-600' : 'bg-gray-700 hover:bg-gray-600'
-                    }`}
+                    className={`flex-1 py-2 px-4 rounded-r transition-colors font-bold ${tradeType === 'sell' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
                   >
                     Sell
                   </button>
                 </div>
               </div>
               
+              {/* Shares/Dollars Toggle and Input */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Shares</label>
+                <div className="flex space-x-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setTradeMode('shares')}
+                    className={`flex-1 py-2 px-4 rounded-l border-r border-gray-600 transition-colors font-bold ${tradeMode === 'shares' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
+                  >
+                    Shares
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTradeMode('dollars')}
+                    className={`flex-1 py-2 px-4 rounded-r transition-colors font-bold ${tradeMode === 'dollars' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
+                  >
+                    Dollars
+                  </button>
+                </div>
+                
                 <input
                   type="number"
                   value={tradeAmount}
-                  onChange={(e) => setTradeAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value);
+                    setTradeAmount(!isNaN(val) ? Math.max(0, val) : 0);
+                  }}
                   className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                   min="0"
+                  step={tradeMode === 'shares' ? '0.0001' : '0.01'}
+                  placeholder={tradeMode === 'shares' ? 'Share amount (fractional allowed)' : 'Dollar amount'}
                 />
               </div>
               
+              {/* Cost Calculation */}
               <div className="text-sm text-gray-400">
                 {(() => {
                   const stock = stocks.find(s => s.symbol === selectedStock);
-                  const baseCost = (stock?.price || 0) * tradeAmount;
+                  let shares = tradeAmount;
+                  let baseCost = (stock?.price || 0) * tradeAmount;
+                  if (tradeMode === 'dollars') {
+                    shares = stock ? Math.floor((tradeAmount / stock.price) * 10000) / 10000 : 0;
+                    baseCost = shares * (stock?.price || 0);
+                  } else {
+                    shares = Math.floor(shares * 10000) / 10000;
+                  }
                   const tradingFee = gameSettings.game.tradingFeesEnabled ? 
                     baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
                   const totalCost = baseCost + tradingFee;
-                  
                   return (
                     <div>
-                      <div>Base Cost: ${baseCost.toLocaleString()}</div>
+                      <div>{tradeMode === 'shares' ? `Base Cost: $${baseCost.toLocaleString()}` : `Shares: ${shares}`}</div>
                       {gameSettings.game.tradingFeesEnabled && (
                         <div>Trading Fee ({gameSettings.game.tradingFeePercent}%): ${tradingFee.toLocaleString()}</div>
                       )}
@@ -715,13 +746,19 @@ const StockMarketGame = () => {
                 onClick={executeTrade}
                 disabled={(() => {
                   const stock = stocks.find(s => s.symbol === selectedStock);
-                  const baseCost = (stock?.price || 0) * tradeAmount;
+                  let shares = tradeAmount;
+                  let baseCost = (stock?.price || 0) * tradeAmount;
+                  if (tradeMode === 'dollars') {
+                    shares = stock ? Math.floor((tradeAmount / stock.price) * 10000) / 10000 : 0;
+                    baseCost = shares * (stock?.price || 0);
+                  } else {
+                    shares = Math.floor(shares * 10000) / 10000;
+                  }
                   const tradingFee = gameSettings.game.tradingFeesEnabled ? 
                     baseCost * (gameSettings.game.tradingFeePercent / 100) : 0;
                   const totalCost = baseCost + tradingFee;
-                  
                   return (tradeType === 'buy' && availableFunds < totalCost) ||
-                         (tradeType === 'sell' && (portfolio[selectedStock] || 0) < tradeAmount);
+                         (tradeType === 'sell' && (portfolio[selectedStock] || 0) < shares || shares <= 0);
                 })()}
                 className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded font-bold"
               >
